@@ -1,0 +1,19 @@
+{
+  "name": "game",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/crbenn/VideoPro.git"
+  },
+  "author": "Caroline Bennison",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/crbenn/VideoPro/issues"
+  },
+  "homepage": "https://github.com/crbenn/VideoPro#readme"
+}
