@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/crbenn/VideoPro#readme",
   "dependencies": {
+    "browser-sync": "^2.26.14",
     "jquery": "^3.6.0"
   }
 }
