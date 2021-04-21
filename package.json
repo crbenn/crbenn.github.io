@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/crbenn/VideoPro/issues"
   },
-  "homepage": "https://github.com/crbenn/VideoPro#readme"
+  "homepage": "https://github.com/crbenn/VideoPro#readme",
+  "dependencies": {
+    "jquery": "^3.6.0"
+  }
 }
