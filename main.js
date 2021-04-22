@@ -1,10 +1,42 @@
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+var firebaseConfig = {
+    apiKey: "AIzaSyDfXqOuGQ1Ivl-BnTVopK5-mcJH1BVwZKg",
+    authDomain: "videopro-fdd92.firebaseapp.com",
+    projectId: "videopro-fdd92",
+    storageBucket: "videopro-fdd92.appspot.com",
+    messagingSenderId: "781197336087",
+    appId: "1:781197336087:web:19c393ac97a95abc814652",
+    measurementId: "G-XSPDFXGCE5"
+};
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+firebase.analytics();
+
+//load main function
 window.addEventListener('load', function() {
-    document.getElementById("body").append(mainPageView());
+
+    // should check if a user is logged in already (in case of accidental refresh)
+    // figure out how to not allow refresh in game state maybe??
+    console.log(firebase.auth().currentUser);
+    if (user) {
+        document.getElementById("body").append(startGameView());
+    } else {
+        document.getElementById("body").append(mainPageView());
+    }
+
+
+    // firebase.auth().createUserWithEmailAndPassword("crbennison@gmail.com", "hOrSe888!").then((userCredential) => {
+    //     var user = userCredential;
+    // }).catch((error) => {
+    //     console.log(error.code);
+    // })
 })
 
-// figure out where to add button click events
 // use these functions to switch between views
 // finish login/signup with firebase functionality by the end of the week
+var user;
 
 let mainPageView = function () {
     let view = document.createElement("div");
@@ -54,22 +86,31 @@ let loginView = function() {
 
     userProfileForm.append(emailInput);
     userProfileForm.append(passwordInput);
-    userProfileForm.append(submit);
 
     view.append(title);
     view.append(userProfileForm);
+    view.append(submit);
     view.append(cancel);
 
-    submit.addEventListener("click", function (){
+    submit.addEventListener("click", async function (){
         let userEmail = emailInput.value;
         let userPass = passwordInput.value;
 
-        // try firebase login stuff
-        if (1 === 1) { // if successful login
-            // do firebase stuff w/ login and such
-            view.replaceWith(gameView());
+        try {
+            await firebase.auth().signInWithEmailAndPassword(userEmail, userPass);
+            user = firebase.auth().currentUser;
+        } catch(error) {
+            if (error.code === "auth/invalid-email") {
+                alert("There is no account associated with this email.");
+            } else if (error.code === "auth/wrong-password") {
+                alert("Incorrect password.");
+            }
+        }
+
+        if (user) { // if signup was a success
+            view.replaceWith(startGameView());
         } else {
-            // give error and let user retry
+            console.log(user)
         }
 
     });
@@ -97,6 +138,7 @@ let signupView = function() {
     emailInput.setAttribute("type", "email");
     let passwordInput = document.createElement("input");
     passwordInput.setAttribute("placeholder", "Password");
+    passwordInput.setAttribute("type", "password");
     let submit = document.createElement("button");
     submit.innerHTML = "Submit";
     let cancel = document.createElement("button");
@@ -104,36 +146,61 @@ let signupView = function() {
 
     userProfileForm.append(emailInput);
     userProfileForm.append(passwordInput);
-    userProfileForm.append(submit);
 
     view.append(title);
     view.append(username);
     view.append(userProfileForm);
+    view.append(submit);
     view.append(cancel);
 
-    submit.addEventListener("click", function (){
+    submit.addEventListener("click", async function (){
         // try firebase add user addition stuff
 
         let userEmail = emailInput.value;
         let userPass = passwordInput.value;
 
-        if (1 === 1) { // if adding the user is successful
-            // do firebase stuff w/ login and such
-            view.replaceWith(gameView());
-        } else {
-            // give error and let user retry
+        try {
+            await firebase.auth().createUserWithEmailAndPassword(userEmail, userPass);
+            user = firebase.auth().currentUser;
+        } catch(error) {
+            if (error.code === "auth/email-already-exists") {
+                alert("This email is already in use. Please use another.");
+            } else if (error.code === "auth/invalid-email") {
+                alert("This email is invalid. Please try again.");
+            } else if (error.code === "auth/weak-password") {
+                alert("Your password must be at least 6 characters long.");
+            }
+        }
+
+        if (user) { // if signup was a success
+            view.replaceWith(startGameView());
         }
 
     });
 
     cancel.addEventListener("click", function(){
         view.replaceWith(mainPageView());
-        // make sure no user gets logged in and everything
     })
 
     return view;
+}
 
-    // button clicks to collect info to later be used by firebase once i figure that ish out aahaha
+// user gets sent here after logging in
+// maybe "see high scores" and "play!" could be options
+// also could have "profile" name and section on top?
+let startGameView = function() {
+    let view = document.createElement("div");
+    let welcome = document.createElement("h1");
+    welcome.innerHTML = "Welcome, userName!"
+    let play = document.createElement("button");
+    play.innerHTML = "Let's play";
+
+    view.append(welcome);
+    view.append(play);
+
+    console.log(user);
+
+    return view;
 }
 
 let gameView = function () {
