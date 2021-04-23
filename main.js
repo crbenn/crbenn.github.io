@@ -14,24 +14,29 @@ var firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 firebase.analytics();
 
+// firebase.auth().onAuthStateChanged(user => {
+//     if (user) {
+//         console.log(user);
+//         document.getElementById("body").append(startGameView());
+//     } else {
+//         document.getElementById("body").append(mainPageView());
+//     }
+// });
+
 //load main function
-window.addEventListener('load', function() {
+window.addEventListener('load', async function() {
 
-    // should check if a user is logged in already (in case of accidental refresh)
-    // figure out how to not allow refresh in game state maybe??
-    console.log(firebase.auth().currentUser);
-    if (user) {
-        document.getElementById("body").append(startGameView());
-    } else {
-        document.getElementById("body").append(mainPageView());
-    }
+    await firebase.auth().onAuthStateChanged(user => {
+        if (user) {
+            console.log(user);
+            document.getElementById("view").replaceWith(startGameView());
+            // possibly make it so game won't restart in case of accidental refresh
+            // this is not necessary, just if there is time
+        } else {
+            document.getElementById("view").replaceWith(mainPageView());
+        }
+    });
 
-
-    // firebase.auth().createUserWithEmailAndPassword("crbennison@gmail.com", "hOrSe888!").then((userCredential) => {
-    //     var user = userCredential;
-    // }).catch((error) => {
-    //     console.log(error.code);
-    // })
 })
 
 // use these functions to switch between views
@@ -40,10 +45,11 @@ var user;
 
 let mainPageView = function () {
     let view = document.createElement("div");
+    view.setAttribute("id", "view");
     let welcome = document.createElement("h1");
     welcome.innerHTML = "Welcome to VideoPro!";
     let joinComm = document.createElement("h2");
-    joinComm.innerHTML = "You must join our community in order to continue.";
+    joinComm.innerHTML = "You must connect to a profile in order to play.";
     let loginButton = document.createElement("button");
     loginButton.innerHTML = "Log in";
     let signUpButton = document.createElement("button");
@@ -63,13 +69,11 @@ let mainPageView = function () {
     })
 
     return view;
-
-    // button clicks
 }
 
 let loginView = function() {
-    // button clicks
     let view = document.createElement("div");
+    view.setAttribute("id", "view");
     let title = document.createElement("h1");
     title.innerHTML = "Sign in";
     let userProfileForm = document.createElement("form");
@@ -128,6 +132,7 @@ let signupView = function() {
     // can tell user where it is from with a tooltip maybe? (bootstrap)
 
     let view = document.createElement("div");
+    view.setAttribute("id", "view");
     let title = document.createElement("h1");
     title.innerHTML = "Sign up";
     let username = document.createElement("h3");
@@ -175,7 +180,6 @@ let signupView = function() {
         if (user) { // if signup was a success
             view.replaceWith(startGameView());
         }
-
     });
 
     cancel.addEventListener("click", function(){
@@ -190,15 +194,21 @@ let signupView = function() {
 // also could have "profile" name and section on top?
 let startGameView = function() {
     let view = document.createElement("div");
+    view.setAttribute("id", "view");
     let welcome = document.createElement("h1");
     welcome.innerHTML = "Welcome, userName!"
     let play = document.createElement("button");
     play.innerHTML = "Let's play";
+    let logout = document.createElement("button");
+    logout.innerHTML = "Logout";
 
     view.append(welcome);
     view.append(play);
+    view.append(logout);
 
-    console.log(user);
+    logout.addEventListener("click", async function() {
+        await firebase.auth().signOut();
+    });
 
     return view;
 }
