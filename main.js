@@ -14,16 +14,8 @@ var firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 firebase.analytics();
 
-// firebase.auth().onAuthStateChanged(user => {
-//     if (user) {
-//         console.log(user);
-//         document.getElementById("body").append(startGameView());
-//     } else {
-//         document.getElementById("body").append(mainPageView());
-//     }
-// });
+let user;
 
-//load main function
 window.addEventListener('load', async function() {
 
     await firebase.auth().onAuthStateChanged(user => {
@@ -37,11 +29,11 @@ window.addEventListener('load', async function() {
         }
     });
 
+
 })
 
 // use these functions to switch between views
 // finish login/signup with firebase functionality by the end of the week
-var user;
 
 let mainPageView = function () {
     let view = document.createElement("div");
@@ -167,17 +159,54 @@ let signupView = function() {
         try {
             await firebase.auth().createUserWithEmailAndPassword(userEmail, userPass);
             user = firebase.auth().currentUser;
+
         } catch(error) {
-            if (error.code === "auth/email-already-exists") {
+            if (error.code === 'auth/email-already-in-use') {
                 alert("This email is already in use. Please use another.");
             } else if (error.code === "auth/invalid-email") {
                 alert("This email is invalid. Please try again.");
             } else if (error.code === "auth/weak-password") {
                 alert("Your password must be at least 6 characters long.");
+            } else {
+                console.log(error.code);
+                alert("Error. Please try again.");
             }
         }
 
         if (user) { // if signup was a success
+
+            let url = "https://en.wikipedia.org/w/api.php";
+            let params = {
+                action: "query",
+                list: "recentchanges",
+                rcprop: "title|ids|sizes|flags|user",
+                rclimit: "5",
+                format: "json"
+            };
+            url = url + "?origin=*";
+            Object.keys(params).forEach(function(key){url += "&" + key + "=" + params[key];});
+
+            let userName = "fjdls;afjdkl;safjdklaj;fdjska;fdjlas;fjdklafjkdlasfjdkls;afjdkl;";
+            await fetch(url)
+                .then(function(response){return response.json();})
+                .then(function(response) {
+                    let recentChanges = response.query.recentchanges;
+                    for (let rc in recentChanges) {
+                        console.log(recentChanges[rc].title.length)
+                        if (recentChanges[rc].title.length < userName.length) {
+
+                            userName = recentChanges[rc].title;
+                        }
+                    }
+                })
+                .catch(function(error){console.log(error);});
+
+            console.log("userName: " + userName);
+
+
+            // add username as a user property, plus add all other user properties!
+            // will have to use database!
+
             view.replaceWith(startGameView());
         }
     });
