@@ -1,4 +1,4 @@
-
+import {User} from "/User.js";
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 var firebaseConfig = {
@@ -13,14 +13,27 @@ var firebaseConfig = {
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 firebase.analytics();
+firebase.database();
 
 let user;
 
 window.addEventListener('load', async function() {
+    // this works!
+    // await firebase.database().ref('users/' + 1).set({
+    //     username: "hiya",
+    //     email: "helo@gmail.com"
+    // });
 
-    await firebase.auth().onAuthStateChanged(user => {
-        if (user) {
+    await firebase.auth().onAuthStateChanged(async function(curruser) {
+        if (curruser) {
+
+            await firebase.database().ref().child("users").child(curruser.uid).get().then((snapshot) => {
+                let userInfo = snapshot.val();
+                user = new User(userInfo.username, userInfo.email, userInfo.modePreferred, userInfo.highScore, curruser.uid);
+            });
+
             console.log(user);
+
             document.getElementById("view").replaceWith(startGameView());
             // possibly make it so game won't restart in case of accidental refresh
             // this is not necessary, just if there is time
@@ -193,7 +206,8 @@ let signupView = function() {
                     let recentChanges = response.query.recentchanges;
                     for (let rc in recentChanges) {
                         console.log(recentChanges[rc].title.length)
-                        if (recentChanges[rc].title.length < userName.length) {
+                        if (recentChanges[rc].title.length < userName.length && !recentChanges[rc].title.includes("User")
+                            && !recentChanges[rc].title.includes("Talk")) {
 
                             userName = recentChanges[rc].title;
                         }
@@ -202,6 +216,17 @@ let signupView = function() {
                 .catch(function(error){console.log(error);});
 
             console.log("userName: " + userName);
+
+            // adds user to firebase database w its ID as the index
+            await firebase.database().ref('users/' + user.uid).set({
+                username: userName,
+                email: userEmail,
+                modePreferred: "light",
+                highScore: 0
+            });
+
+            user = new User(userName, userEmail, "light", 0, user.uid);
+            console.log(user.userName)
 
 
             // add username as a user property, plus add all other user properties!
@@ -225,7 +250,7 @@ let startGameView = function() {
     let view = document.createElement("div");
     view.setAttribute("id", "view");
     let welcome = document.createElement("h1");
-    welcome.innerHTML = "Welcome, userName!"
+    welcome.innerHTML = "Welcome, " + user.userName;
     let play = document.createElement("button");
     play.innerHTML = "Let's play";
     let logout = document.createElement("button");
