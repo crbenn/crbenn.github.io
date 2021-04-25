@@ -1,4 +1,6 @@
 import {User} from "/User.js";
+import {Video} from "/Video.js";
+
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 var firebaseConfig = {
@@ -15,14 +17,13 @@ firebase.initializeApp(firebaseConfig);
 firebase.analytics();
 firebase.database();
 
+// make sure that these values are reset on sign out and game over and such!!!
 let user;
+let currVideo;
+let wordArray;
+let playCount = 0;
 
 window.addEventListener('load', async function() {
-    // this works!
-    // await firebase.database().ref('users/' + 1).set({
-    //     username: "hiya",
-    //     email: "helo@gmail.com"
-    // });
 
     await firebase.auth().onAuthStateChanged(async function(curruser) {
         if (curruser) {
@@ -46,7 +47,6 @@ window.addEventListener('load', async function() {
 })
 
 // use these functions to switch between views
-// finish login/signup with firebase functionality by the end of the week
 
 let mainPageView = function () {
     let view = document.createElement("div");
@@ -141,7 +141,7 @@ let signupView = function() {
     let title = document.createElement("h1");
     title.innerHTML = "Sign up";
     let username = document.createElement("h3");
-    username.innerHTML = "Your given username is: username randomly assigned"
+    username.innerHTML = "Your username will be assigned to you later."
     let userProfileForm = document.createElement("form");
     let emailInput = document.createElement("input");
     emailInput.setAttribute("placeholder", "Email");
@@ -264,9 +264,82 @@ let startGameView = function() {
         await firebase.auth().signOut();
     });
 
+    //takes user to game!
+    play.addEventListener("click", async function() {
+        const wordResult = await axios({
+            method:"get",
+            url:"https://random-word-api.herokuapp.com/word?number=10"
+        })
+        wordArray = wordResult.data; // holds 10 randomly generated words to use for youtube video retrieval
+
+        view.replaceWith(await gamePlayView());
+    })
+
     return view;
 }
 
-let gameView = function () {
+let gamePlayView = async function () {
+    //<iframe> for youtube video
+    //form for user input
+    //score
+    //restart
+    //#/10 if we are restricting the #of videos per game
+    //Help button
+    //logout button
+    //instructions button
 
+    let view = document.createElement("div");
+    view.setAttribute("id", "view");
+
+    let vidUrl; //to be used with iframe
+
+    if (playCount < 10) {
+        const randUrl = "https://www.googleapis.com/youtube/v3/search?part=snippet&order=viewCount&q=" + wordArray[playCount] + "&type=video&maxResults=1&key=AIzaSyAAkIpG47eXVFhmC0rcwBMpXjDGjnUf1mA";
+
+        const vidResult = await axios({
+            method:"get",
+            url: randUrl
+        })
+        // this works
+        const vidID = vidResult.data.items[0].id.videoId
+        vidUrl = "https://www.youtube.com/watch?v=" + vidID;
+
+        const infoURL = "https://www.googleapis.com/youtube/v3/videos?part=statistics&id=" + vidID + "&key=AIzaSyAAkIpG47eXVFhmC0rcwBMpXjDGjnUf1mA";
+        const vidInfo = await axios({
+            method:"get",
+            url: infoURL
+        })
+
+        const views = vidInfo.data.items[0].statistics.viewCount;
+        const dislikes = vidInfo.data.items[0].statistics.dislikeCount;
+        const likes = vidInfo.data.items[0].statistics.likeCount;
+
+        //try to figure out year?? might be in original result in snippet, published at
+        //but this works other than the year!!!
+        currVideo = new Video(vidUrl, views, likes, dislikes);
+        console.log(currVideo);
+    } else {
+        view.replaceWith(gameOverView());
+    }
+
+    // add html elements here!!
+
+
+    return view;
+
+}
+
+let gameResultView = function() {
+    //doesn't have to replace the game's view, just the part that had the video+input form
+    //show how many points the user earned
+    //show their total score
+    //show the actual values ie "your guess" vs "actual value"
+    //next video button
+    //increase play count
+}
+
+let gameOverView = function() {
+    //shows final score
+    //shows your high score and if it is a new high score
+    //gives option to log out or play again
 }
