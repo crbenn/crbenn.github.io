@@ -37,6 +37,8 @@ window.addEventListener('load', async function() {
             console.log(user);
 
             document.getElementById("view").replaceWith(startGameView());
+
+
             // possibly make it so game won't restart in case of accidental refresh
             // this is not necessary, just if there is time
         } else {
@@ -230,7 +232,6 @@ let signupView = function() {
             });
 
             user = new User(userName, userEmail, "light", 0, user.uid);
-            console.log(user.userName)
 
 
             // add username as a user property, plus add all other user properties!
@@ -287,19 +288,79 @@ let gamePlayView = async function () {
     let view = document.createElement("div");
     view.setAttribute("id", "view");
 
+    let gameSection = document.createElement("div");
+
+    let instructions = document.createElement("button");
+    instructions.innerHTML = "How to play";
+    let logout = document.createElement("button");
+    logout.innerHTML = "Logout"
+    let lightOrDark = document.createElement("button");
+
+    if (user.modePreference === "light") {
+        lightOrDark.innerHTML = "Go dark mode";
+    } else {
+        lightOrDark.innerHTML = "Go light mode";
+    }
+
+    lightOrDark.addEventListener("click", async function() {
+        if (user.modePreference === "light") {
+            user.modePreference = "dark";
+            await firebase.database().ref('users/' + user.uid).update({
+                modePreferred: "dark"
+            });
+            lightOrDark.innerHTML = "Go light mode";
+        } else {
+            user.modePreference = "light";
+            await firebase.database().ref('users/' + user.uid).set({
+                modePreferred: "light"
+            });
+            lightOrDark.innerHTML = "Go dark mode";
+        }
+    });
+
+    logout.addEventListener("click", async function() {
+        await firebase.auth().signOut();
+    });
+
+    view.append(instructions);
+    view.append(lightOrDark);
+    view.append(logout);
+    view.append(gameSection);
+
     let vidUrl; //to be used with iframe
 
     if (playCount <= 10) {
-        const randUrl = "https://www.googleapis.com/youtube/v3/search?part=snippet&order=viewCount&q=" + wordArray[playCount - 1] + "&type=video&maxResults=1&key=AIzaSyAAkIpG47eXVFhmC0rcwBMpXjDGjnUf1mA";
+        let randUrl = "https://www.googleapis.com/youtube/v3/search?regionCode=US&part=snippet&order=viewCount&q=" + wordArray[playCount - 1] + "&type=video&maxResults=3&videoEmbeddable=true&safeSearch=strict&key=AIzaSyAAkIpG47eXVFhmC0rcwBMpXjDGjnUf1mA";
 
-        const vidResult = await axios({
+        let vidResult = await axios({
             method:"get",
             url: randUrl
         })
 
+        // makes sure that there is a video actually returned
+        while (vidResult.data.items[0] === null || vidResult.data.items[0] === undefined) {
+            await generateNewWords();
+
+            randUrl = "https://www.googleapis.com/youtube/v3/search?regionCode=US&part=snippet&order=viewCount&q=" + wordArray[playCount - 1] + "&type=video&maxResults=3&videoEmbeddable=true&safeSearch=strict&key=AIzaSyAAkIpG47eXVFhmC0rcwBMpXjDGjnUf1mA";
+
+            vidResult = await axios({
+                method:"get",
+                url: randUrl
+            })
+        }
+
         console.log(vidResult);
         // this works
-        const vidID = vidResult.data.items[0].id.videoId
+        let vidID;
+        if (vidResult.data.items[0] != null) {
+            vidID = vidResult.data.items[0].id.videoId;
+        } else if (vidResult.data.items[1] != null) {
+            vidID = vidResult.data.items[1].id.videoId;
+        } else {
+            vidID = vidResult.data.items[2].id.videoId;
+        }
+
+
         vidUrl = "https://www.youtube.com/embed/" + vidID + "?modestbranding=1&showinfo=0&autohide=0&fs=0&autoplay=1";
 
         const infoURL = "https://www.googleapis.com/youtube/v3/videos?part=statistics&id=" + vidID + "&key=AIzaSyAAkIpG47eXVFhmC0rcwBMpXjDGjnUf1mA";
@@ -307,6 +368,8 @@ let gamePlayView = async function () {
             method:"get",
             url: infoURL
         })
+
+
 
         const views = parseInt(vidInfo.data.items[0].statistics.viewCount);
         const dislikes = parseInt(vidInfo.data.items[0].statistics.dislikeCount);
@@ -316,133 +379,112 @@ let gamePlayView = async function () {
         //but this works other than the year!!!
         currVideo = new Video(vidUrl, views, likes, dislikes);
         console.log(currVideo);
-    } else {
-        view.replaceWith(gameOverView());
-    }
+        //
+        // let instructions = document.createElement("button");
+        // instructions.innerHTML = "How to play";
+        // let logout = document.createElement("button");
+        // logout.innerHTML = "Logout"
+        let gamesOutOfTen = document.createElement("h1");
+        gamesOutOfTen.innerHTML = "Round " + playCount + "/10";
+        // let currentScoreDisplay = document.createElement("h2");
+        // currentScoreDisplay.innerHTML = "Score: " + currentScore;
 
-    // add html elements here!!
-    //<iframe> for youtube video
-    //form for user input
-    //score
-    //restart
-    //#/10 if we are restricting the #of videos per game
-    //Help button
-    //logout button
-    //instructions button
+        let videoDisplay = document.createElement("iframe");
+        videoDisplay.classList.add("video");
+        videoDisplay.setAttribute("src", vidUrl);
+        videoDisplay.setAttribute("sandbox", "allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-presentation allow-top-navigation");
 
-    let instructions = document.createElement("button");
-    instructions.innerHTML = "How to play";
-    let logout = document.createElement("button");
-    logout.innerHTML = "Logout"
-    let gamesOutOfTen = document.createElement("h1");
-    gamesOutOfTen.innerHTML = playCount + "/10";
-    // let currentScoreDisplay = document.createElement("h2");
-    // currentScoreDisplay.innerHTML = "Score: " + currentScore;
+        let playerGuessForm = document.createElement("form");
 
-    let gameSection = document.createElement("div");
+        let viewsLabel = document.createElement("label");
+        viewsLabel.innerHTML = "How many views?";
+        viewsLabel.setAttribute("for", "views");
+        let viewsInput = document.createElement("input");
+        viewsInput.setAttribute("type", "number");
+        viewsInput.setAttribute("id", "views");
 
-    let videoDisplay = document.createElement("iframe");
-    videoDisplay.classList.add("video");
-    videoDisplay.setAttribute("src", vidUrl);
-    videoDisplay.setAttribute("sandbox", "allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-presentation allow-top-navigation");
+        let likesLabel = document.createElement("label");
+        likesLabel.innerHTML = "How many likes?";
+        likesLabel.setAttribute("for", "likes");
+        let likesInput = document.createElement("input");
+        likesInput.setAttribute("type", "number");
+        likesInput.setAttribute("id", "likes");
 
-    let playerGuessForm = document.createElement("form");
+        let dislikesLabel = document.createElement("label");
+        dislikesLabel.innerHTML = "How many dislikes?";
+        dislikesLabel.setAttribute("for", "dislikes");
+        let dislikesInput = document.createElement("input");
+        dislikesInput.setAttribute("type", "number");
+        dislikesInput.setAttribute("id", "dislikes");
 
-    let viewsLabel = document.createElement("label");
-    viewsLabel.innerHTML = "How many views?";
-    viewsLabel.setAttribute("for", "views");
-    let viewsInput = document.createElement("input");
-    viewsInput.setAttribute("type", "number");
-    viewsInput.setAttribute("id", "views");
+        let submit = document.createElement("button");
+        submit.innerHTML = "Guess!";
 
-    let likesLabel = document.createElement("label");
-    likesLabel.innerHTML = "How many likes?";
-    likesLabel.setAttribute("for", "likes");
-    let likesInput = document.createElement("input");
-    likesInput.setAttribute("type", "number");
-    likesInput.setAttribute("id", "likes");
+        let totalScore = document.createElement("h2");
+        totalScore.setAttribute("id", "score");
+        totalScore.innerHTML = "Score: " + currentScore;
 
-    let dislikesLabel = document.createElement("label");
-    dislikesLabel.innerHTML = "How many dislikes?";
-    dislikesLabel.setAttribute("for", "dislikes");
-    let dislikesInput = document.createElement("input");
-    dislikesInput.setAttribute("type", "number");
-    dislikesInput.setAttribute("id", "dislikes");
+        gameSection.append(gamesOutOfTen);
+        gameSection.append(videoDisplay);
+        gameSection.append(playerGuessForm);
+        gameSection.append(submit)
 
-    let submit = document.createElement("button");
-    submit.innerHTML = "Guess!";
+        playerGuessForm.append(viewsLabel);
+        playerGuessForm.append(viewsInput);
+        playerGuessForm.append(likesLabel);
+        playerGuessForm.append(likesInput);
+        playerGuessForm.append(dislikesLabel);
+        playerGuessForm.append(dislikesInput);
 
-    let totalScore = document.createElement("h2");
-    totalScore.setAttribute("id", "score");
-    totalScore.innerHTML = "Score: " + currentScore;
+        view.append(totalScore);
 
-    gameSection.append(videoDisplay);
-    gameSection.append(playerGuessForm);
-    gameSection.append(submit)
+        submit.addEventListener("click", function() {
 
+            let viewersGuess = parseInt(viewsInput.value);
+            let likesGuess = parseInt(likesInput.value);
+            let dislikesGuess = parseInt(dislikesInput.value);
 
-    logout.addEventListener("click", async function() {
-        await firebase.auth().signOut();
-    });
+            if (Number.isInteger(viewersGuess) && Number.isInteger(likesGuess) && Number.isInteger(dislikesGuess)) {
+                if (viewersGuess >=0 && likesGuess >=0 && dislikesGuess >=0) {
+                    let total = 0;
+                    //calculate point gains
+                    if (viewersGuess > currVideo.viewCount) {
+                        total += ((currVideo.viewCount + .01) / (viewersGuess + .01)) * 33.3333333;
+                    } else {
+                        total += ((viewersGuess + .01) / (currVideo.viewCount + .01)) * 33.3333333;
+                    }
 
-    playerGuessForm.append(viewsLabel);
-    playerGuessForm.append(viewsInput);
-    playerGuessForm.append(likesLabel);
-    playerGuessForm.append(likesInput);
-    playerGuessForm.append(dislikesLabel);
-    playerGuessForm.append(dislikesInput);
+                    console.log(total);
 
-    view.append(instructions);
-    view.append(logout);
-    view.append(gameSection);
-    view.append(totalScore);
+                    if (likesGuess > currVideo.likeCount) {
+                        total += ((currVideo.likeCount + .01) / (likesGuess + .01)) * 33.3333333;
+                    } else {
+                        total += ((likesGuess + .01) / (currVideo.likeCount + .01)) * 33.3333333;
+                    }
 
-    submit.addEventListener("click", function() {
+                    console.log(total);
 
-        let viewersGuess = parseInt(viewsInput.value);
-        let likesGuess = parseInt(likesInput.value);
-        let dislikesGuess = parseInt(dislikesInput.value);
+                    if (dislikesGuess > currVideo.dislikeCount) {
+                        total += ((currVideo.dislikeCount + .01) / (dislikesGuess + .01)) * 33.3333333;
+                    } else {
+                        total += ((dislikesGuess + .01) / (currVideo.dislikeCount + .01)) * 33.3333333;
+                    }
 
-        if (Number.isInteger(viewersGuess) && Number.isInteger(likesGuess) && Number.isInteger(dislikesGuess)) {
-            if (viewersGuess >=0 && likesGuess >=0 && dislikesGuess >=0) {
-                let total = 0;
-                //calculate point gains
-                if (viewersGuess > currVideo.viewCount) {
-                    total += ((currVideo.viewCount + .01) / (viewersGuess + .01)) * 10;
+                    console.log(total);
+                    currentScore += Math.round(total);
+
+                    gameSection.replaceWith(gameResultView(Math.round(total), viewersGuess, likesGuess, dislikesGuess));
+
                 } else {
-                    total += ((viewersGuess + .01) / (currVideo.viewCount + .01)) * 10;
+                    alert("Please enter a positive number for each section.");
                 }
-
-                console.log((viewersGuess + .01) + " divided by " + (currVideo.viewCount + .01));
-
-                console.log(total);
-
-                if (likesGuess > currVideo.likeCount) {
-                    total += ((currVideo.likeCount + .01) / (likesGuess + .01)) * 10;
-                } else {
-                    total += ((likesGuess + .01) / (currVideo.likeCount + .01)) * 10;
-                }
-
-                console.log(total);
-
-                if (dislikesGuess > currVideo.dislikeCount) {
-                    total += ((currVideo.dislikeCount + .01) / (dislikesGuess + .01)) * 10;
-                } else {
-                    total += ((dislikesGuess + .01) / (currVideo.dislikeCount + .01)) * 10;
-                }
-
-                console.log(total);
-                currentScore += total;
-
-                gameSection.replaceWith(gameResultView(total, viewersGuess, likesGuess, dislikesGuess));
-
             } else {
-                alert("Please enter a positive number for each section.");
+                alert("Please enter a whole number for each section.");
             }
-        } else {
-            alert("Please enter a whole number for each section.");
-        }
-    })
+        });
+    } else {
+        gameSection.replaceWith(await gameOverView());
+    }
 
     return view;
 
@@ -463,18 +505,21 @@ let gameResultView = function(pointsEarned, viewersGuess, likesGuess, dislikesGu
     earnedPoints.innerHTML = "This round, you earned " + pointsEarned + " points!";
 
     let viewers = document.createElement("h3");
-    viewers.innerHTML = "You guessed there were " + viewersGuess + " viewers. There were actually " + currVideo.viewCount;
+    viewers.innerHTML = "You guessed there were " + viewersGuess.toLocaleString() + " viewers. There were actually " + currVideo.viewCount.toLocaleString() + ".";
 
     let likes = document.createElement("h3");
-    likes.innerHTML = "You guessed there were " + likesGuess + " likes. There were actually " + currVideo.likeCount;
+    likes.innerHTML = "You guessed there were " + likesGuess.toLocaleString() + " likes. There were actually " + currVideo.likeCount.toLocaleString() + ".";
 
     let dislikes = document.createElement("h3");
-    dislikes.innerHTML = "You guessed there were " + dislikesGuess + " dislikes. There were actually " + currVideo.dislikeCount;
+    dislikes.innerHTML = "You guessed there were " + dislikesGuess.toLocaleString() + " dislikes. There were actually " + currVideo.dislikeCount.toLocaleString() + ".";
 
     document.getElementById("score").innerHTML = "Score: " + currentScore;
 
     let next = document.createElement("button");
-    next.innerHTML = "Next video";
+    if (playCount > 10) {
+        next.innerHTML = "Game over! See your results"
+    }
+    next.innerHTML = "Next round";
 
     next.addEventListener("click", async function() {
         document.getElementById("view").replaceWith(await gamePlayView());
@@ -489,8 +534,44 @@ let gameResultView = function(pointsEarned, viewersGuess, likesGuess, dislikesGu
     return resultView;
 }
 
-let gameOverView = function() {
+let gameOverView = async function() {
     //shows final score
     //shows your high score and if it is a new high score
     //gives option to log out or play again
+    let overSection = document.createElement("div");
+
+    let finalScoreDisplay = document.createElement("h1");
+    finalScoreDisplay.innerHTML = "Final score: " + currentScore;
+
+    let playAgain = document.createElement("button");
+    playAgain.innerHTML = "Play again";
+
+    playAgain.addEventListener("click", async function() {
+        playCount = 1;
+        currentScore = 0;
+
+        document.getElementById("view").replaceWith(await gamePlayView());
+    });
+
+    let highScore = document.createElement("h3");
+    if (currentScore > user.highScore) {
+        highScore.innerHTML = "New high score!"
+        user.highScore = currentScore;
+    } else {
+        highScore.innerHTML = "No new high score. Are you a VideoPro or no?!"
+    }
+
+    overSection.append(finalScoreDisplay);
+    overSection.append(highScore);
+    overSection.append(playAgain);
+
+    return overSection;
+}
+
+let generateNewWords = async function() {
+    const wordResult = await axios({
+        method:"get",
+        url:"https://random-word-api.herokuapp.com/word?number=10"
+    })
+    wordArray = wordResult.data;
 }
