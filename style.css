@@ -1,10 +1,67 @@
+body {
+    margin: 0;
+    font-family: "Lucida Console", "Courier New", monospace;
+}
+
+
 .video {
     display: block;
     width: 80%;
-    height: 50%;
+    height: 80%;
 }
 
+
 #view {
-    width: 1000px;
-    height: 700px;
+    width: 100vw;
+    height: 100vh;
+
+    border: solid 25px #546BD1;
+
+    background: linear-gradient(-45deg, #b19cd9, #CBC3E3, #add8e6, #698bd0);
+    background-size: 300% 300%;
+    animation: gradient 15s ease infinite;
+}
+
+.center {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 50%;
+}
+
+.mainBtn {
+    color: lightblue;
+    background-color: #546BD1;
+    border-color: #546BD1;
+    height: 40px;
+    width: 100px;
+    font-size: 19px;
+}
+
+.mainBtn:hover {
+    background-color: #698bd0;
+    height: 42px;
+}
+
+.mainBtnContainer {
+    display: flex;
+    justify-content: space-around;
+    margin-left: 25%;
+    margin-right: 25%;
+}
+
+img {
+    height: 80%
+}
+
+@keyframes gradient {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
 }

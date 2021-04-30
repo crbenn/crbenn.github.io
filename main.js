@@ -57,19 +57,25 @@ window.addEventListener('load', async function() {
 let mainPageView = function () {
     let view = document.createElement("div");
     view.setAttribute("id", "view");
-    let welcome = document.createElement("h1");
-    welcome.innerHTML = "Welcome to VideoPro!";
-    let joinComm = document.createElement("h2");
-    joinComm.innerHTML = "You must connect to a profile in order to play.";
+    let buttonDiv = document.createElement("div");
+    buttonDiv.classList.add("mainBtnContainer");
     let loginButton = document.createElement("button");
+    loginButton.classList.add("mainBtn");
     loginButton.innerHTML = "Log in";
     let signUpButton = document.createElement("button");
+    signUpButton.classList.add("mainBtn");
     signUpButton.innerHTML = "Sign up";
 
-    view.append(welcome);
-    view.append(joinComm);
-    view.append(loginButton);
-    view.append(signUpButton);
+    let logo = document.createElement("img");
+    logo.setAttribute("src", "./VideoPro_TitlePage.svg");
+    logo.classList.add("center");
+
+
+    buttonDiv.append(loginButton);
+    buttonDiv.append(signUpButton);
+
+    view.append(logo);
+    view.append(buttonDiv);
 
     loginButton.addEventListener("click", function() {
         view.replaceWith(loginView()); //changing screen to login form
@@ -311,7 +317,7 @@ let gamePlayView = async function () {
             lightOrDark.innerHTML = "Go light mode";
         } else {
             user.modePreference = "light";
-            await firebase.database().ref('users/' + user.uid).set({
+            await firebase.database().ref('users/' + user.uid).update({
                 modePreferred: "light"
             });
             lightOrDark.innerHTML = "Go dark mode";
