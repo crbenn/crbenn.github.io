@@ -29,12 +29,12 @@ window.addEventListener('load', async function() {
     await firebase.auth().onAuthStateChanged(async function(curruser) {
         if (curruser) {
 
-            await firebase.database().ref().child("users").child(curruser.uid).get().then((snapshot) => {
-                let userInfo = snapshot.val();
+            await firebase.database().ref().child("users").child(curruser.uid).get().then(async function(snapshot){
+                let userInfo = await snapshot.val();
                 user = new User(userInfo.username, userInfo.email, userInfo.modePreferred, userInfo.highScore, curruser.uid);
             });
 
-            console.log(user);
+
 
             document.getElementById("view").replaceWith(startGameView());
 
@@ -128,11 +128,7 @@ let loginView = function() {
             }
         }
 
-        if (user) { // if signup was a success
-            view.replaceWith(startGameView());
-        } else {
-            console.log(user)
-        }
+        // user auth change will set right view screen if login is successful!
 
     });
 
@@ -239,11 +235,7 @@ let signupView = function() {
 
             user = new User(userName, userEmail, "light", 0, user.uid);
 
-
-            // add username as a user property, plus add all other user properties!
-            // will have to use database!
-
-            view.replaceWith(startGameView());
+            // user auth change will set right view screen
         }
     });
 
@@ -258,6 +250,8 @@ let signupView = function() {
 // maybe "see high scores" and "play!" could be options
 // also could have "profile" name and section on top?
 let startGameView = function() {
+    console.log(user.userName);
+
     let view = document.createElement("div");
     view.setAttribute("id", "view");
     let welcome = document.createElement("h1");
