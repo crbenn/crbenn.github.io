@@ -29,14 +29,19 @@ window.addEventListener('load', async function() {
     await firebase.auth().onAuthStateChanged(async function(curruser) {
         if (curruser) {
 
-            await firebase.database().ref().child("users").child(curruser.uid).get().then(async function(snapshot){
-                let userInfo = await snapshot.val();
-                user = new User(userInfo.username, userInfo.email, userInfo.modePreferred, userInfo.highScore, curruser.uid);
-            });
+            if (!user) {
+                await firebase.database().ref().child("users").child(curruser.uid).get().then(async function(snapshot){
+                    let userInfo = await snapshot.val();
+                    user = new User(userInfo.username, userInfo.email, userInfo.modePreferred, userInfo.highScore, curruser.uid);
+                });
+
+                document.getElementById("view").replaceWith(startGameView());
+            }
 
 
 
-            document.getElementById("view").replaceWith(startGameView());
+
+
 
 
             // possibly make it so game won't restart in case of accidental refresh
@@ -66,6 +71,7 @@ let mainPageView = function () {
     signUpButton.classList.add("mainBtn");
     signUpButton.innerHTML = "Sign up";
 
+
     let logo = document.createElement("img");
     logo.setAttribute("src", "./VideoPro_TitlePage.svg");
     logo.classList.add("center");
@@ -92,41 +98,98 @@ let loginView = function() {
     let view = document.createElement("div");
     view.setAttribute("id", "view");
     let title = document.createElement("h1");
-    title.innerHTML = "Sign in";
+    title.innerHTML = "Welcome Back!";
+
+    let loginHolder = document.createElement("div");
+    loginHolder.classList.add("loginHolder");
+    let loginSection = document.createElement("div");
+    loginSection.classList.add("loginSection");
+
     let userProfileForm = document.createElement("form");
+    userProfileForm.classList.add("loginForm");
     let emailInput = document.createElement("input");
     emailInput.setAttribute("placeholder", "Email");
     emailInput.setAttribute("type", "email");
+    emailInput.classList.add("loginInputs");
     let passwordInput = document.createElement("input");
     passwordInput.setAttribute("placeholder", "Password");
     passwordInput.setAttribute("type", "password");
+    passwordInput.classList.add("loginInputs");
+
+    let errorDisplay = document.createElement("p");
+    errorDisplay.style.display = "none";
+    errorDisplay.style.color = "red";
+    errorDisplay.style.fontWeight = "bold";
+
+    let loginBtnHolder = document.createElement("div");
+    loginBtnHolder.classList.add("loginButtonHolder");
     let submit = document.createElement("button");
-    submit.innerHTML = "Submit";
+    submit.innerHTML = "Sign In";
+    submit.classList.add("loginButtons");
     let cancel = document.createElement("button");
     cancel.innerHTML = "Cancel";
+    cancel.classList.add("loginButtons");
 
     userProfileForm.append(emailInput);
     userProfileForm.append(passwordInput);
+    userProfileForm.append(errorDisplay);
 
-    view.append(title);
-    view.append(userProfileForm);
-    view.append(submit);
-    view.append(cancel);
+    loginBtnHolder.append(submit);
+    loginBtnHolder.append(cancel);
+
+    loginSection.append(userProfileForm);
+    loginSection.append(loginBtnHolder);
+
+    loginHolder.append(title);
+    loginHolder.append(loginSection);
+
+    view.append(loginHolder);
 
     submit.addEventListener("click", async function (){
         let userEmail = emailInput.value;
         let userPass = passwordInput.value;
 
-        try {
-            await firebase.auth().signInWithEmailAndPassword(userEmail, userPass);
-            user = firebase.auth().currentUser;
-        } catch(error) {
-            if (error.code === "auth/invalid-email") {
-                alert("There is no account associated with this email.");
-            } else if (error.code === "auth/wrong-password") {
-                alert("Incorrect password.");
+        if (userEmail === "") {
+            errorDisplay.style.display = "block";
+            errorDisplay.innerHTML = "Please enter your email.";
+
+            emailInput.style.borderBottom = "1px solid red";
+            passwordInput.style.borderBottom = "1px solid #3a3a3a";
+        } else if (userPass === "") {
+            errorDisplay.style.display = "block";
+            errorDisplay.innerHTML = "Please enter your password.";
+
+            emailInput.style.borderBottom = "1px solid #3a3a3a";
+            passwordInput.style.borderBottom = "1px solid red";
+        } else {
+            try {
+                await firebase.auth().signInWithEmailAndPassword(userEmail, userPass);
+                user = firebase.auth().currentUser;
+            } catch(error) {
+                console.log(error);
+                if (error.code === "auth/user-not-found") {
+                    errorDisplay.style.display = "block";
+                    errorDisplay.innerHTML = "There is no account associated with this email.";
+
+                    passwordInput.style.borderBottom = "1px solid #3a3a3a";
+                    emailInput.style.borderBottom = "1px solid red";
+                } else if (error.code === "auth/wrong-password") {
+                    errorDisplay.style.display = "block";
+                    errorDisplay.innerHTML = "Incorrect password.";
+
+                    emailInput.style.borderBottom = "1px solid #3a3a3a";
+                    passwordInput.style.borderBottom = "1px solid red";
+                } else if (error.code === "auth/invalid-email") {
+                    errorDisplay.style.display = "block";
+                    errorDisplay.innerHTML = "This email is invalid.";
+
+                    passwordInput.style.borderBottom = "1px solid #3a3a3a";
+                    emailInput.style.borderBottom = "1px solid red";
+                }
             }
         }
+
+
 
         // user auth change will set right view screen if login is successful!
 
@@ -146,30 +209,68 @@ let signupView = function() {
 
     let view = document.createElement("div");
     view.setAttribute("id", "view");
+
+    let loginHolder = document.createElement("div");
+    loginHolder.classList.add("loginHolder");
+    let loginSection = document.createElement("div");
+    loginSection.classList.add("loginSection");
+
+    let usernameInfo = document.createElement("button");
+    usernameInfo.classList.add("tooltipInfoBtn");
+    usernameInfo.innerHTML = "?";
+    $(usernameInfo).tooltip({title: "Your username will be the title of a wikipedia page that is being edited right now! Cool, right?", animation: true, placement: "right"});
+
     let title = document.createElement("h1");
     title.innerHTML = "Sign up";
     let username = document.createElement("h3");
-    username.innerHTML = "Your username will be assigned to you later."
+    username.innerHTML = "Your username will be assigned to you after your account is created.";
+
+
+
     let userProfileForm = document.createElement("form");
+    userProfileForm.classList.add("loginForm");
     let emailInput = document.createElement("input");
     emailInput.setAttribute("placeholder", "Email");
     emailInput.setAttribute("type", "email");
+    emailInput.classList.add("loginInputs");
     let passwordInput = document.createElement("input");
     passwordInput.setAttribute("placeholder", "Password");
     passwordInput.setAttribute("type", "password");
+    passwordInput.classList.add("loginInputs");
+
     let submit = document.createElement("button");
-    submit.innerHTML = "Submit";
+    submit.innerHTML = "Create Account";
+    submit.classList.add("loginButtons");
     let cancel = document.createElement("button");
     cancel.innerHTML = "Cancel";
+    cancel.classList.add("loginButtons");
+
+    let errorDisplay = document.createElement("p");
+    errorDisplay.style.display = "none";
+    errorDisplay.style.color = "red";
+    errorDisplay.style.fontWeight = "bold";
+
+    let loginBtnHolder = document.createElement("div");
+    loginBtnHolder.classList.add("loginButtonHolder");
 
     userProfileForm.append(emailInput);
     userProfileForm.append(passwordInput);
+    userProfileForm.append(errorDisplay);
 
-    view.append(title);
-    view.append(username);
-    view.append(userProfileForm);
-    view.append(submit);
-    view.append(cancel);
+    loginBtnHolder.append(submit);
+    loginBtnHolder.append(cancel);
+
+    loginSection.append(userProfileForm);
+    loginSection.append(loginBtnHolder);
+
+    username.append(usernameInfo);
+
+    loginHolder.append(title);
+    loginHolder.append(username);
+    // loginHolder.append(usernameInfo);
+    loginHolder.append(loginSection);
+
+    view.append(loginHolder);
 
     submit.addEventListener("click", async function (){
         // try firebase add user addition stuff
@@ -177,66 +278,94 @@ let signupView = function() {
         let userEmail = emailInput.value;
         let userPass = passwordInput.value;
 
-        try {
-            await firebase.auth().createUserWithEmailAndPassword(userEmail, userPass);
-            user = firebase.auth().currentUser;
+        if (userEmail === "") {
+            errorDisplay.style.display = "block";
+            errorDisplay.innerHTML = "Please enter your email.";
 
-        } catch(error) {
-            if (error.code === 'auth/email-already-in-use') {
-                alert("This email is already in use. Please use another.");
-            } else if (error.code === "auth/invalid-email") {
-                alert("This email is invalid. Please try again.");
-            } else if (error.code === "auth/weak-password") {
-                alert("Your password must be at least 6 characters long.");
-            } else {
-                console.log(error.code);
-                alert("Error. Please try again.");
+            emailInput.style.borderBottom = "1px solid red";
+            passwordInput.style.borderBottom = "1px solid #3a3a3a";
+        } else if (userPass === "") {
+            errorDisplay.style.display = "block";
+            errorDisplay.innerHTML = "Please enter your password.";
+
+            emailInput.style.borderBottom = "1px solid #3a3a3a";
+            passwordInput.style.borderBottom = "1px solid red";
+        } else {
+            try {
+                await firebase.auth().createUserWithEmailAndPassword(userEmail, userPass);
+                user = firebase.auth().currentUser;
+
+            } catch(error) {
+                if (error.code === 'auth/email-already-in-use') {
+                    errorDisplay.style.display = "block";
+                    errorDisplay.innerHTML = "This email is already in use. Please use another.";
+
+                    emailInput.style.borderBottom = "1px solid #3a3a3a";
+                    passwordInput.style.borderBottom = "1px solid red";
+                } else if (error.code === "auth/invalid-email") {
+                    errorDisplay.style.display = "block";
+                    errorDisplay.innerHTML = "This email is invalid. Please try again.";
+
+                    emailInput.style.borderBottom = "1px solid #3a3a3a";
+                    passwordInput.style.borderBottom = "1px solid red";
+                } else if (error.code === "auth/weak-password") {
+                    errorDisplay.style.display = "block";
+                    errorDisplay.innerHTML = "Your password must be at least 6 characters long.";
+
+                    emailInput.style.borderBottom = "1px solid #3a3a3a";
+                    passwordInput.style.borderBottom = "1px solid red";
+                } else {
+                    console.log(error.code);
+                    alert("Error. Please try again.");
+                }
+            }
+
+            if (user) { // if signup was a success
+
+                let url = "https://en.wikipedia.org/w/api.php";
+                let params = {
+                    action: "query",
+                    list: "recentchanges",
+                    rcprop: "title|ids|sizes|flags|user",
+                    rclimit: "5",
+                    format: "json"
+                };
+                url = url + "?origin=*";
+                Object.keys(params).forEach(function(key){url += "&" + key + "=" + params[key];});
+
+                let userName = "fjdls;afjdkl;safjdklaj;fdjska;fdjlas;fjdklafjkdlasfjdkls;afjdkl;";
+                await fetch(url)
+                    .then(function(response){return response.json();})
+                    .then(function(response) {
+                        let recentChanges = response.query.recentchanges;
+                        for (let rc in recentChanges) {
+                            console.log(recentChanges[rc].title.length)
+                            if (recentChanges[rc].title.length < userName.length && !recentChanges[rc].title.includes("User")
+                                && !recentChanges[rc].title.includes("Talk")) {
+
+                                userName = recentChanges[rc].title;
+                            }
+                        }
+                    })
+                    .catch(function(error){console.log(error);});
+
+                console.log("userName: " + userName);
+
+                // adds user to firebase database w its ID as the index
+                await firebase.database().ref('users/' + user.uid).set({
+                    username: userName,
+                    email: userEmail,
+                    modePreferred: "light",
+                    highScore: 0
+                });
+
+                user = new User(userName, userEmail, "light", 0, user.uid);
+
+                view.replaceWith(startGameView());
             }
         }
 
-        if (user) { // if signup was a success
 
-            let url = "https://en.wikipedia.org/w/api.php";
-            let params = {
-                action: "query",
-                list: "recentchanges",
-                rcprop: "title|ids|sizes|flags|user",
-                rclimit: "5",
-                format: "json"
-            };
-            url = url + "?origin=*";
-            Object.keys(params).forEach(function(key){url += "&" + key + "=" + params[key];});
-
-            let userName = "fjdls;afjdkl;safjdklaj;fdjska;fdjlas;fjdklafjkdlasfjdkls;afjdkl;";
-            await fetch(url)
-                .then(function(response){return response.json();})
-                .then(function(response) {
-                    let recentChanges = response.query.recentchanges;
-                    for (let rc in recentChanges) {
-                        console.log(recentChanges[rc].title.length)
-                        if (recentChanges[rc].title.length < userName.length && !recentChanges[rc].title.includes("User")
-                            && !recentChanges[rc].title.includes("Talk")) {
-
-                            userName = recentChanges[rc].title;
-                        }
-                    }
-                })
-                .catch(function(error){console.log(error);});
-
-            console.log("userName: " + userName);
-
-            // adds user to firebase database w its ID as the index
-            await firebase.database().ref('users/' + user.uid).set({
-                username: userName,
-                email: userEmail,
-                modePreferred: "light",
-                highScore: 0
-            });
-
-            user = new User(userName, userEmail, "light", 0, user.uid);
-
-            // user auth change will set right view screen
-        }
     });
 
     cancel.addEventListener("click", function(){
@@ -290,11 +419,21 @@ let gamePlayView = async function () {
 
     let gameSection = document.createElement("div");
 
+    let menuSection = document.createElement("div");
+    menuSection.classList.add("menuSection");
+
+    let leftMenu = document.createElement("div");
+    leftMenu.classList.add("leftMenu");
+
     let instructions = document.createElement("button");
     instructions.innerHTML = "How to play";
+    instructions.classList.add("menuButton");
+
     let logout = document.createElement("button");
     logout.innerHTML = "Logout"
+    logout.classList.add("menuButton");
     let lightOrDark = document.createElement("button");
+    lightOrDark.classList.add("menuButton");
 
     if (user.modePreference === "light") {
         lightOrDark.innerHTML = "Go dark mode";
@@ -322,9 +461,13 @@ let gamePlayView = async function () {
         await firebase.auth().signOut();
     });
 
-    view.append(instructions);
-    view.append(lightOrDark);
-    view.append(logout);
+    leftMenu.append(instructions);
+    leftMenu.append(lightOrDark);
+
+    menuSection.append(leftMenu);
+    menuSection.append(logout);
+
+    view.append(menuSection);
     view.append(gameSection);
 
     let vidUrl; //to be used with iframe
@@ -385,7 +528,7 @@ let gamePlayView = async function () {
         // let logout = document.createElement("button");
         // logout.innerHTML = "Logout"
         let gamesOutOfTen = document.createElement("h1");
-        gamesOutOfTen.innerHTML = "Round " + playCount + "/10";
+        gamesOutOfTen.innerHTML = "Round <strong>" + playCount + "</strong>/10";
         // let currentScoreDisplay = document.createElement("h2");
         // currentScoreDisplay.innerHTML = "Score: " + currentScore;
 
@@ -420,9 +563,14 @@ let gamePlayView = async function () {
         let submit = document.createElement("button");
         submit.innerHTML = "Guess!";
 
+        let scoreDiv = document.createElement("div");
+        scoreDiv.classList.add("scoreDiv");
+
         let totalScore = document.createElement("h2");
         totalScore.setAttribute("id", "score");
         totalScore.innerHTML = "Score: " + currentScore;
+
+        scoreDiv.append(totalScore);
 
         gameSection.append(gamesOutOfTen);
         gameSection.append(videoDisplay);
@@ -436,7 +584,7 @@ let gamePlayView = async function () {
         playerGuessForm.append(dislikesLabel);
         playerGuessForm.append(dislikesInput);
 
-        view.append(totalScore);
+        view.append(scoreDiv);
 
         submit.addEventListener("click", function() {
 
@@ -502,7 +650,7 @@ let gameResultView = function(pointsEarned, viewersGuess, likesGuess, dislikesGu
     let resultView = document.createElement("div");
 
     let earnedPoints = document.createElement("h1");
-    earnedPoints.innerHTML = "This round, you earned " + pointsEarned + " points!";
+    earnedPoints.innerHTML = "This round, you earned <strong>" + pointsEarned + "</strong> points!";
 
     let viewers = document.createElement("h3");
     viewers.innerHTML = "You guessed there were " + viewersGuess.toLocaleString() + " viewers. There were actually " + currVideo.viewCount.toLocaleString() + ".";
