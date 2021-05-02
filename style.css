@@ -9,8 +9,8 @@ body {
     margin-left: auto;
     margin-right: auto;
     margin-bottom: 3vh;
-    width: 80%;
-    height: 55vh;
+    width: 68%;
+    height: 50vh;
 }
 
 h3 {
@@ -26,8 +26,7 @@ label {
     font-size: 20px;
 }
 
-
-#view {
+.viewLight {
     width: 100vw;
     height: 100vh;
 
@@ -38,6 +37,24 @@ label {
     background: linear-gradient(-45deg, #b19cd9, #CBC3E3, #add8e6, #698bd0);
     background-size: 300% 300%;
     animation: gradient 15s ease infinite;
+
+
+}
+
+
+.viewDark {
+    width: 100vw;
+    height: 100vh;
+
+    font-family: "Lucida Console", "Courier New", monospace;
+
+    border: solid 23px #546BD1;
+
+    background: linear-gradient(-45deg, #551A8B, #694489, #0047AB, #191970);
+    background-size: 300% 300%;
+    animation: gradient 15s ease infinite;
+
+    color: lightgray;
 }
 
 .center {
@@ -45,6 +62,11 @@ label {
     margin-left: auto;
     margin-right: auto;
     width: 50%;
+}
+
+.guessForm{
+    display: flex;
+    justify-content: space-between;
 }
 
 .menuSection {
@@ -77,14 +99,6 @@ label {
     color: white;
 }
 
-.gameButton {
-
-}
-
-.gameButton:hover {
-
-}
-
 .mainBtn {
     color: lightblue;
     background-color: #546BD1;
@@ -115,7 +129,7 @@ img {
 .scoreDiv {
     position: fixed;
     left: 50%;
-    bottom: 20px;
+    bottom: 6px;
     transform: translate(-50%, -50%);
     margin: 0 auto;
 }
@@ -191,6 +205,41 @@ img {
     font-weight: bold;
     border: none;
 }
+
+.gameInputs {
+    width: 10vw;
+    margin-right: 2vw;
+    background-color: lightgray;
+}
+
+.gameLabels {
+    margin-left: 3vw;
+}
+
+.link {
+    color: black;
+}
+
+.link:hover {
+    color: #546BD1;
+}
+
+.startGameContainer {
+    width: 80%;
+    margin-top: 35vh;
+    margin-bottom: 35vh;
+}
+
+.resultDisplay {
+    width: 80%;
+    margin-top: 22vh;
+    margin-bottom: 22vh;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+
 
 @keyframes gradient {
     0% {
