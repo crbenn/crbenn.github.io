@@ -19,7 +19,7 @@
   "dependencies": {
     "axios": "^0.21.1",
     "browser-sync": "^2.26.14",
-    "firebase": "^8.4.1",
+    "firebase": "^8.4.3",
     "jquery": "^3.6.0"
   }
 }
