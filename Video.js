@@ -4,4 +4,4 @@ export let Video = function(link, viewCount, likeCount, dislikeCount, year) {
     this.likeCount = likeCount;
     this.dislikeCount = dislikeCount;
     this.year = year;
-}
+} 
