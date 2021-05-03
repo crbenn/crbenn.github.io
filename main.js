@@ -71,6 +71,7 @@ let mainPageView = function () {
 
 
     let logo = document.createElement("img");
+    logo.setAttribute("alt", "Are you a VideoPro?");
     logo.setAttribute("src", "./VideoPro_TitlePage.svg");
     logo.classList.add("center");
 
