@@ -5,4 +5,4 @@ export let User = function(username, email, modepreference, highscore, uid) {
     this.highScore = highscore;
     this.uid = uid;
 
-}
+} 
