@@ -850,8 +850,8 @@ let gameOverView = async function() {
 
 let generateNewWords = async function() {
     const wordResult = await axios({
-        method:"get",
-        url:"https://random-word-api.herokuapp.com/word?number=5"
+        method: "get",
+        url: "https://random-word-api.herokuapp.com/word?number=5"
     })
     wordArray = wordResult.data;
 }
