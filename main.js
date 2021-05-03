@@ -17,12 +17,15 @@ firebase.initializeApp(firebaseConfig);
 firebase.analytics();
 firebase.database();
 
-// make sure that these values are reset on sign out and game over and such!!!
 let user;
 let currVideo;
 let wordArray;
 let playCount = 1;
 let currentScore = 0;
+let apiKey = "AIzaSyCsnyl2jRM6vpPgdj3Gm2NiviTY4FjmgeM"
+// first key = AIzaSyAAkIpG47eXVFhmC0rcwBMpXjDGjnUf1mA
+// second key = AIzaSyAa7KKJdar9OtcNUX8qG3S7mRyl25OBP_c
+// third key = AIzaSyCsnyl2jRM6vpPgdj3Gm2NiviTY4FjmgeM
 
 window.addEventListener('load', async function() {
 
@@ -35,8 +38,6 @@ window.addEventListener('load', async function() {
                     user = new User(userInfo.username, userInfo.email, userInfo.modePreferred, userInfo.highScore, curruser.uid);
                 });
 
-                console.log(user);
-
                 if (user.modePreference === "dark") {
                     document.getElementById("view").classList.remove("viewLight");
                     document.getElementById("view").classList.add("viewDark");
@@ -44,6 +45,7 @@ window.addEventListener('load', async function() {
                 document.getElementById("view").replaceWith(startGameView());
             }
         } else {
+
             currentScore = 0;
             playCount = 1;
             user = null;
@@ -53,8 +55,6 @@ window.addEventListener('load', async function() {
 
 
 })
-
-// use these functions to switch between views
 
 let mainPageView = function () {
     let view = document.createElement("div");
@@ -165,7 +165,6 @@ let loginView = function() {
                 await firebase.auth().signInWithEmailAndPassword(userEmail, userPass);
                 user = firebase.auth().currentUser;
             } catch(error) {
-                console.log(error);
                 if (error.code === "auth/user-not-found") {
                     errorDisplay.style.display = "block";
                     errorDisplay.innerHTML = "There is no account associated with this email.";
@@ -187,25 +186,18 @@ let loginView = function() {
                 }
             }
         }
-
-
-
         // user auth change will set right view screen if login is successful!
 
     });
 
     cancel.addEventListener("click", function(){
         view.replaceWith(mainPageView());
-        // make sure no user gets logged in and everything
     })
 
     return view;
 }
 
 let signupView = function() {
-    // need to randomly get username using an API
-    // can tell user where it is from with a tooltip maybe? (bootstrap)
-
     let view = document.createElement("div");
     view.setAttribute("id", "view");
     view.classList.add("viewLight");
@@ -315,7 +307,6 @@ let signupView = function() {
                     emailInput.style.borderBottom = "1px solid #3a3a3a";
                     passwordInput.style.borderBottom = "1px solid red";
                 } else {
-                    console.log(error.code);
                     alert("Error. Please try again.");
                 }
             }
@@ -339,7 +330,6 @@ let signupView = function() {
                     .then(function(response) {
                         let recentChanges = response.query.recentchanges;
                         for (let rc in recentChanges) {
-                            console.log(recentChanges[rc].title.length)
                             if (recentChanges[rc].title.length < userName.length && !recentChanges[rc].title.includes("User")
                                 && !recentChanges[rc].title.includes("Talk") && !recentChanges[rc].title.includes("Category")) {
 
@@ -347,9 +337,7 @@ let signupView = function() {
                             }
                         }
                     })
-                    .catch(function(error){console.log(error);});
-
-                console.log("userName: " + userName);
+                    .catch(function(error){alert("There was an issue. Please try again.");});
 
                 // adds user to firebase database w its ID as the index
                 await firebase.database().ref('users/' + user.uid).set({
@@ -375,12 +363,7 @@ let signupView = function() {
     return view;
 }
 
-// user gets sent here after logging in
-// maybe "see high scores" and "play!" could be options
-// also could have "profile" name and section on top?
 let startGameView = function() {
-    console.log(user.userName);
-
     let view = document.createElement("div");
     view.setAttribute("id", "view");
     if (user.modePreference === "light") {
@@ -433,9 +416,9 @@ let startGameView = function() {
     play.addEventListener("click", async function() {
         const wordResult = await axios({
             method:"get",
-            url:"https://random-word-api.herokuapp.com/word?number=10"
+            url:"https://random-word-api.herokuapp.com/word?number=5"
         })
-        wordArray = wordResult.data; // holds 10 randomly generated words to use for youtube video retrieval
+        wordArray = wordResult.data; // holds 5 randomly generated words to use for youtube video retrieval
 
         view.replaceWith(await gamePlayView());
     })
@@ -454,6 +437,7 @@ let gamePlayView = async function () {
     }
 
     let gameSection = document.createElement("div");
+    gameSection.style.textAlign = "center";
 
     let menuSection = document.createElement("div");
     menuSection.classList.add("menuSection");
@@ -464,7 +448,7 @@ let gamePlayView = async function () {
     let instructions = document.createElement("button");
     instructions.innerHTML = "How to play";
     instructions.classList.add("menuButton");
-    $(instructions).popover({title: "Game Instructions", content: "For 10 total rounds, you have 2 tasks:<br />1. Watch the video (or at least part of it!)<br />2. Make your guesses on how many views," +
+    $(instructions).popover({title: "Game Instructions", content: "For 5 total rounds, you have 2 tasks:<br />1. Watch the video (or at least part of it!)<br />2. Make your guesses on how many views," +
             " likes, and dislikes this video has received on Youtube<br />Yes, it would be possible to just search the video and find out, but where is the fun in that?<br />Good luck, VideoPro!", html: true, placement: "bottom", trigger: "manual"});
 
     instructions.addEventListener("click", function() {
@@ -475,7 +459,7 @@ let gamePlayView = async function () {
         }
 
         $(instructions).popover('toggle');
-    })
+    });
 
     let logout = document.createElement("button");
     logout.innerHTML = "Logout"
@@ -524,8 +508,8 @@ let gamePlayView = async function () {
 
     let vidUrl; //to be used with iframe
 
-    if (playCount <= 10) {
-        let randUrl = "https://www.googleapis.com/youtube/v3/search?regionCode=US&part=snippet&order=viewCount&q=" + wordArray[playCount - 1] + "&type=video&maxResults=3&videoEmbeddable=true&safeSearch=strict&videoSyndicated=true&key=AIzaSyAAkIpG47eXVFhmC0rcwBMpXjDGjnUf1mA";
+    if (playCount <= 5) {
+        let randUrl = "https://www.googleapis.com/youtube/v3/search?regionCode=US&part=snippet&order=viewCount&q=" + wordArray[playCount - 1] + "&type=video&maxResults=3&videoEmbeddable=true&safeSearch=strict&videoSyndicated=true&key=" + apiKey;
 
         let vidResult = await axios({
             method:"get",
@@ -536,7 +520,7 @@ let gamePlayView = async function () {
         while (vidResult.data.items[0] === null || vidResult.data.items[0] === undefined) {
             await generateNewWords();
 
-            randUrl = "https://www.googleapis.com/youtube/v3/search?regionCode=US&part=snippet&order=viewCount&q=" + wordArray[playCount - 1] + "&type=video&maxResults=3&videoEmbeddable=true&safeSearch=strict&key=AIzaSyAAkIpG47eXVFhmC0rcwBMpXjDGjnUf1mA";
+            randUrl = "https://www.googleapis.com/youtube/v3/search?regionCode=US&part=snippet&order=viewCount&q=" + wordArray[playCount - 1] + "&type=video&maxResults=3&videoEmbeddable=true&safeSearch=strict&key=" + apiKey;
 
             vidResult = await axios({
                 method:"get",
@@ -544,8 +528,6 @@ let gamePlayView = async function () {
             })
         }
 
-        console.log(vidResult);
-        // this works
         let vidID;
         if (vidResult.data.items[0] != null) {
             vidID = vidResult.data.items[0].id.videoId;
@@ -558,7 +540,7 @@ let gamePlayView = async function () {
 
         vidUrl = "https://www.youtube.com/embed/" + vidID + "?modestbranding=1&showinfo=0&autohide=0&fs=0&autoplay=1";
 
-        const infoURL = "https://www.googleapis.com/youtube/v3/videos?part=statistics&id=" + vidID + "&key=AIzaSyAAkIpG47eXVFhmC0rcwBMpXjDGjnUf1mA";
+        const infoURL = "https://www.googleapis.com/youtube/v3/videos?part=statistics&id=" + vidID + "&key=" + apiKey;
         const vidInfo = await axios({
             method:"get",
             url: infoURL
@@ -580,19 +562,10 @@ let gamePlayView = async function () {
             likes = parseInt(vidInfo.data.items[0].statistics.likeCount);
         }
 
-        //try to figure out year?? might be in original result in snippet, published at
-        //but this works other than the year!!!
         currVideo = new Video(vidUrl, views, likes, dislikes);
-        console.log(currVideo);
-        //
-        // let instructions = document.createElement("button");
-        // instructions.innerHTML = "How to play";
-        // let logout = document.createElement("button");
-        // logout.innerHTML = "Logout"
+
         let gamesOutOfTen = document.createElement("h1");
-        gamesOutOfTen.innerHTML = "Round <strong>" + playCount + "</strong>/10";
-        // let currentScoreDisplay = document.createElement("h2");
-        // currentScoreDisplay.innerHTML = "Score: " + currentScore;
+        gamesOutOfTen.innerHTML = "Round <strong>" + playCount + "</strong>/5";
 
         let videoDisplay = document.createElement("iframe");
         videoDisplay.classList.add("video");
@@ -647,12 +620,18 @@ let gamePlayView = async function () {
         totalScore.setAttribute("id", "score");
         totalScore.innerHTML = "Score: <strong>" + currentScore + "</strong>";
 
+        let errorDisplay = document.createElement("p");
+        errorDisplay.style.display = "none";
+        errorDisplay.style.color = "red";
+        errorDisplay.style.fontWeight = "bold";
+
         scoreDiv.append(totalScore);
 
         gameSection.append(gamesOutOfTen);
         gameSection.append(videoDisplay);
         gameSection.append(playerGuessForm);
         gameSection.append(submitSection);
+        gameSection.append(errorDisplay);
 
         playerGuessForm.append(viewsLabel);
         playerGuessForm.append(viewsInput);
@@ -679,15 +658,11 @@ let gamePlayView = async function () {
                         total += ((viewersGuess + .01) / (currVideo.viewCount + .01)) * 33.3333333;
                     }
 
-                    console.log(total);
-
                     if (likesGuess > currVideo.likeCount) {
                         total += ((currVideo.likeCount + .01) / (likesGuess + .01)) * 33.3333333;
                     } else {
                         total += ((likesGuess + .01) / (currVideo.likeCount + .01)) * 33.3333333;
                     }
-
-                    console.log(total);
 
                     if (dislikesGuess > currVideo.dislikeCount) {
                         total += ((currVideo.dislikeCount + .01) / (dislikesGuess + .01)) * 33.3333333;
@@ -695,16 +670,17 @@ let gamePlayView = async function () {
                         total += ((dislikesGuess + .01) / (currVideo.dislikeCount + .01)) * 33.3333333;
                     }
 
-                    console.log(total);
                     currentScore += Math.round(total);
 
                     gameSection.replaceWith(gameResultView(Math.round(total), viewersGuess, likesGuess, dislikesGuess));
 
                 } else {
-                    alert("Please enter a positive number for each section.");
+                    errorDisplay.style.display = "block";
+                    errorDisplay.innerHTML = "Please enter positive numbers for each section.";
                 }
             } else {
-                alert("Please enter a whole number for each section.");
+                errorDisplay.style.display = "block";
+                errorDisplay.innerHTML = "Please enter whole numbers for each section.";
             }
         });
     } else {
@@ -716,12 +692,6 @@ let gamePlayView = async function () {
 }
 
 let gameResultView = function(pointsEarned, viewersGuess, likesGuess, dislikesGuess) {
-    //doesn't have to replace the game's view, just the part that had the video+input form
-    //show how many points the user earned
-    //show their total score
-    //show the actual values ie "your guess" vs "actual value"
-    //next video button
-    //increase play count
     playCount++;
 
     let resultView = document.createElement("div");
@@ -744,7 +714,7 @@ let gameResultView = function(pointsEarned, viewersGuess, likesGuess, dislikesGu
 
     let next = document.createElement("button");
     next.classList.add("mainBtn");
-    if (playCount > 10) {
+    if (playCount > 5) {
         next.innerHTML = "Game over! See your results >>";
     } else {
         next.innerHTML = "Next round >>";
@@ -764,40 +734,115 @@ let gameResultView = function(pointsEarned, viewersGuess, likesGuess, dislikesGu
 }
 
 let gameOverView = async function() {
-    //shows final score
-    //shows your high score and if it is a new high score
-    //gives option to log out or play again
     let overSection = document.createElement("div");
+    overSection.classList.add("startGameContainer");
+    overSection.classList.add("center");
 
     let finalScoreDisplay = document.createElement("h1");
-    finalScoreDisplay.innerHTML = "Final score: " + currentScore;
+    finalScoreDisplay.innerHTML = "Final score: <strong>" + currentScore + "</strong>";
+
+    let btnContainer = document.createElement("div");
+    btnContainer.classList.add("overBtnContainer");
 
     let playAgain = document.createElement("button");
     playAgain.classList.add("mainBtn");
     playAgain.innerHTML = "Play again";
 
+    let highScores = document.createElement("button");
+    highScores.classList.add("mainBtn");
+    highScores.innerHTML = "Global High Scores";
+
+    await firebase.database().ref().child("highScores").get().then(async function(snapshot){
+        let highScoreInfo = snapshot.val();
+
+        let player;
+
+        for (let i = 1; i < 4; i++) {
+            player = highScoreInfo[i].toString();
+
+            let scoreString = "";
+            let j = 0;
+            while (player[j] != " ") {
+                scoreString += player[j];
+                j++;
+            }
+
+            if (currentScore > parseInt(scoreString)) {
+                let k = i;
+                // this should push all high scores down a slot!
+                while ((k + 1) < 4) {
+                    await firebase.database().ref('highScores/' + (k + 1)).update({
+                        0: highScoreInfo[k].toString()
+                    });
+
+                    k++;
+                }
+
+                await firebase.database().ref('highScores/' + i).update({
+                    0: currentScore + " - " + user.userName
+                });
+                break;
+            }
+
+        }
+
+    });
+
+    let highScoresString = "";
+    await firebase.database().ref().child("highScores").get().then(async function(snapshot){
+        let highScoreInfo = snapshot.val();
+
+        let player;
+
+        for (let i = 1; i < 4; i++) {
+            player = highScoreInfo[i].toString();
+            highScoresString += player;
+
+            if (i<3) {
+                highScoresString+= "<br />";
+            }
+        }
+    });
+
+
+    $(highScores).popover({title: "High Scores", content: highScoresString, html: true, placement: "bottom", trigger: "manual"});
+
+    highScores.addEventListener("click", function() {
+        if (highScores.innerHTML === "Global High Scores") {
+            highScores.innerHTML = "Hide";
+        } else {
+            highScores.innerHTML = "Global High Scores";
+        }
+
+        $(highScores).popover('toggle');
+    })
+
     playAgain.addEventListener("click", async function() {
         playCount = 1;
         currentScore = 0;
+        await generateNewWords();
 
         document.getElementById("view").replaceWith(await gamePlayView());
     });
 
     let highScore = document.createElement("h3");
     if (currentScore > user.highScore) {
-        highScore.innerHTML = "New high score!"
+        highScore.innerHTML = "Congratulations, " + user.userName + "! New personal high score."
         user.highScore = currentScore;
 
         await firebase.database().ref('users/' + user.uid).update({
             highScore: currentScore
         });
     } else {
-        highScore.innerHTML = "No new high score. Are you a VideoPro or no?!"
+        highScore.innerHTML = "Too bad, " + user.userName + ". No new personal high score. Are you a VideoPro or no?!"
     }
+
+    btnContainer.append(highScores);
+    btnContainer.append(playAgain);
 
     overSection.append(finalScoreDisplay);
     overSection.append(highScore);
-    overSection.append(playAgain);
+    overSection.append(btnContainer);
 
     return overSection;
 }
@@ -805,7 +850,7 @@ let gameOverView = async function() {
 let generateNewWords = async function() {
     const wordResult = await axios({
         method:"get",
-        url:"https://random-word-api.herokuapp.com/word?number=10"
+        url:"https://random-word-api.herokuapp.com/word?number=5"
     })
     wordArray = wordResult.data;
 }

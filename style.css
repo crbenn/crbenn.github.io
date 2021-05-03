@@ -239,6 +239,12 @@ img {
     justify-content: center;
 }
 
+.overBtnContainer {
+    display: flex;
+    justify-content: space-around;
+    margin-left: 10%;
+    margin-right: 10%
+}
 
 
 @keyframes gradient {
